@@ -50,7 +50,7 @@ def train():
     
     torch.save(gru.state_dict(), "data/gru.model")
     torch.save(mlp.state_dict(), "data/mlp.model")
-    print("[+] Saved trained models into data/gru.model & data/mlp.model")
+    print("[+] Saved trained models into pytorch_model_generator/data/gru.model & pytorch_model_generator/data/mlp.model")
 
 
 if __name__ == "__main__":

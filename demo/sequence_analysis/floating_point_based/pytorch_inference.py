@@ -21,6 +21,6 @@ if __name__ == "__main__":
             h0 = torch.zeros((1, 1, 4)).squeeze(0)
             _, h0 = gru(data_t, h0)
             prediction = mlp(h0.squeeze()).tolist()
-            print("[+] \t prediction: [{:.3f}, {:.3f}] -> number of 1: {:.0f} | length of sequence: {:.0f}".format(
+            print("[+] \t prediction: [{:.4f}, {:.4f}] -> number of 1: {:.0f} | length of sequence: {:.0f}".format(
                 prediction[0], prediction[1], prediction[0] * len(data), prediction[1] * MAX_SEQ_LENGTH))
 

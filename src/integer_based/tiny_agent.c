@@ -1,7 +1,7 @@
 #include "tiny_agent.h"
 
 
-TYPE quantized(TYPE v)
+TA_TYPE quantized(TA_TYPE v)
 {
 	return (v << SCALE_BIT) / F_RANGE;
 }
@@ -9,28 +9,28 @@ TYPE quantized(TYPE v)
 void init_sigmoid_table(char *sigmoid_input_file, char *sigmoid_output_file)
 {
 	struct file_holder holder;
-	sigmoid_input = (TYPE *)assign_memory(TABLE_RANGE * sizeof(TYPE));
-	sigmoid_output = (TYPE *)assign_memory(TABLE_RANGE * sizeof(TYPE));
+	sigmoid_input = (TA_TYPE *)assign_memory(TABLE_RANGE * sizeof(TA_TYPE));
+	sigmoid_output = (TA_TYPE *)assign_memory(TABLE_RANGE * sizeof(TA_TYPE));
 
 	open_file(&holder, sigmoid_input_file);
-	read_bytes(&holder, (char *)sigmoid_input, TABLE_RANGE * sizeof(TYPE));
+	read_bytes(&holder, (char *)sigmoid_input, TABLE_RANGE * sizeof(TA_TYPE));
 	close_file(&holder);
 	open_file(&holder, sigmoid_output_file);
-	read_bytes(&holder, (char *)sigmoid_output, TABLE_RANGE * sizeof(TYPE));
+	read_bytes(&holder, (char *)sigmoid_output, TABLE_RANGE * sizeof(TA_TYPE));
 	close_file(&holder);
 }
 
 void init_tanh_table(char *tanh_input_file, char *tanh_output_file)
 {
 	struct file_holder holder;
-	tanh_input = (TYPE *)assign_memory(TABLE_RANGE * sizeof(TYPE));
-	tanh_output = (TYPE *)assign_memory(TABLE_RANGE * sizeof(TYPE));
+	tanh_input = (TA_TYPE *)assign_memory(TABLE_RANGE * sizeof(TA_TYPE));
+	tanh_output = (TA_TYPE *)assign_memory(TABLE_RANGE * sizeof(TA_TYPE));
 
 	open_file(&holder, tanh_input_file);
-	read_bytes(&holder, (char *)tanh_input, TABLE_RANGE * sizeof(TYPE));
+	read_bytes(&holder, (char *)tanh_input, TABLE_RANGE * sizeof(TA_TYPE));
 	close_file(&holder);
 	open_file(&holder, tanh_output_file);
-	read_bytes(&holder, (char *)tanh_output, TABLE_RANGE * sizeof(TYPE));
+	read_bytes(&holder, (char *)tanh_output, TABLE_RANGE * sizeof(TA_TYPE));
 	close_file(&holder);
 
 	// printf("%d\n", tanh_input);
@@ -48,7 +48,7 @@ void free_tanh_table()
 	free_memory((char*) tanh_output);
 }
 
-TYPE table_query(TYPE *input, TYPE *output, TYPE v)
+TA_TYPE table_query(TA_TYPE *input, TA_TYPE *output, TA_TYPE v)
 {
 	int lb = 0, rb = TABLE_RANGE - 1;
 	if (v < input[0]) {
@@ -68,24 +68,24 @@ TYPE table_query(TYPE *input, TYPE *output, TYPE v)
 	return output[lb];
 }
 
-TYPE q_mul(TYPE x, TYPE y)
+TA_TYPE q_mul(TA_TYPE x, TA_TYPE y)
 {
 	return (long long)x * y * F_RANGE >> SCALE_BIT;
 }
 
-TYPE q_add(TYPE x, TYPE y)
+TA_TYPE q_add(TA_TYPE x, TA_TYPE y)
 {
 	return x + y;
 }
 
-void print(TYPE *input, int size)
+void print(TA_TYPE *input, int size)
 {   
     for (int i = 0; i < size; i++)
         printf("%.4f ", (double) input[i] * 10 / (1 << 30));
     printf("\n");
 }
 
-void matrix_dot_vector(TYPE *matrix, TYPE *vector, int x, int y, TYPE *result, TYPE *bias, int add)
+void matrix_dot_vector(TA_TYPE *matrix, TA_TYPE *vector, int x, int y, TA_TYPE *result, TA_TYPE *bias, int add)
 {
 	int i, j;
 
@@ -100,31 +100,31 @@ void matrix_dot_vector(TYPE *matrix, TYPE *vector, int x, int y, TYPE *result, T
 	}
 }
 
-void ta_sigmoid(TYPE *vector, unsigned int length)
+void ta_sigmoid(TA_TYPE *vector, unsigned int length)
 {
 	int i;
 	for (i = 0; i < length; i++)
 		vector[i] = table_query(sigmoid_input, sigmoid_output, vector[i]);
 }
 
-void ta_tanh(TYPE *vector, unsigned int length)
+void ta_tanh(TA_TYPE *vector, unsigned int length)
 {
 	int i;
 	for (i = 0; i < length; i++)
 		vector[i] = table_query(tanh_input, tanh_output, vector[i]);
 }
 
-void ta_relu(TYPE *vector, unsigned int length)
+void ta_relu(TA_TYPE *vector, unsigned int length)
 {
 	while (length)
 		if (vector[--length] < 0)
 			vector[length] = 0;
 }
 
-void inference_gru_cell(struct gru_cell *cell, TYPE *input)
+void inference_gru_cell(struct gru_cell *cell, TA_TYPE *input)
 {
     int i;
-	TYPE *hidden = cell->hidden;
+	TA_TYPE *hidden = cell->hidden;
 	matrix_dot_vector(cell->wir, input, cell->hidden_size, cell->input_size, cell->rt, cell->bir, 0);
 	matrix_dot_vector(cell->whr, hidden, cell->hidden_size, cell->hidden_size, cell->rt, cell->bhr, 1);
 	ta_sigmoid(cell->rt, cell->hidden_size);
@@ -178,7 +178,7 @@ void init_gru_cell(struct gru_cell *cell, unsigned int hidden_size, unsigned int
 			hidden_size,
 			hidden_size,
 	};
-	TYPE **parameter_matrix[] = {
+	TA_TYPE **parameter_matrix[] = {
 			&cell->wir,
 			&cell->wiz,
 			&cell->win,
@@ -199,7 +199,7 @@ void init_gru_cell(struct gru_cell *cell, unsigned int hidden_size, unsigned int
 	cell->hidden_size = hidden_size, cell->input_size = input_size;
 
 	for (i = 0; i < GRU_PARAM_MATRIX_NUM; i++) {
-		*parameter_matrix[i] = (TYPE *)assign_memory(size[i] * sizeof(TYPE));
+		*parameter_matrix[i] = (TA_TYPE *)assign_memory(size[i] * sizeof(TA_TYPE));
 	}
 
 	cell->inference = &inference_gru_cell;
@@ -213,7 +213,7 @@ void init_gru_cell(struct gru_cell *cell, unsigned int hidden_size, unsigned int
 void free_gru_cell(struct gru_cell *cell)
 {
 	int i;
-	TYPE **parameter_matrix[] = {
+	TA_TYPE **parameter_matrix[] = {
 			&cell->wir,
 			&cell->wiz,
 			&cell->win,
@@ -257,7 +257,7 @@ void read_in_gru_cell(struct gru_cell *cell, char *path)
 			hidden_size,
 			hidden_size,
 	};
-	TYPE **parameter_matrix[] = {
+	TA_TYPE **parameter_matrix[] = {
 			&cell->wir,
 			&cell->wiz,
 			&cell->win,
@@ -278,7 +278,7 @@ void read_in_gru_cell(struct gru_cell *cell, char *path)
 
 	open_file(&holder, path);
 	for (i = 0; i < GRU_PARAM_MATRIX_NUM - 1; i++) {
-		read_bytes(&holder, (char *) *parameter_matrix[i], size[i] * sizeof(TYPE));
+		read_bytes(&holder, (char *) *parameter_matrix[i], size[i] * sizeof(TA_TYPE));
 	}
 	close_file(&holder);
 }
@@ -295,9 +295,9 @@ void init_fc_layer(struct fc_layer *layer, unsigned int input_size, unsigned int
 {
 	layer->input_size = input_size;
 	layer->output_size = output_size;
-	layer->result = (TYPE *)assign_memory(output_size * sizeof(TYPE));
-	layer->b = (TYPE *)assign_memory(output_size * sizeof(TYPE));
-	layer->w = (TYPE *)assign_memory(input_size * output_size * sizeof(TYPE));
+	layer->result = (TA_TYPE *)assign_memory(output_size * sizeof(TA_TYPE));
+	layer->b = (TA_TYPE *)assign_memory(output_size * sizeof(TA_TYPE));
+	layer->w = (TA_TYPE *)assign_memory(input_size * output_size * sizeof(TA_TYPE));
 
 	switch (activate)
 	{
@@ -328,7 +328,7 @@ void free_fc_layer(struct fc_layer *layer)
 	free_memory((char*) layer->w);
 }
 
-void inference_fc_layer(struct fc_layer *layer, TYPE *input)
+void inference_fc_layer(struct fc_layer *layer, TA_TYPE *input)
 {
 	matrix_dot_vector(layer->w, input, layer->output_size, layer->input_size, layer->result, layer->b, 0);
 	if (layer->activate_function)
@@ -343,13 +343,13 @@ void read_in_fc_layer(struct fc_layer *layer, struct file_holder *holder)
 			input_size * output_size,
 			output_size
 	};
-	TYPE **parameter_matrix[] = {
+	TA_TYPE **parameter_matrix[] = {
 			&layer->w,
 			&layer->b
 	};
 
 	for (i = 0; i < FC_PARAM_MATRIX_NUM; i++) {
-		read_bytes(holder, (char *) *parameter_matrix[i], size[i] * sizeof(TYPE));
+		read_bytes(holder, (char *) *parameter_matrix[i], size[i] * sizeof(TA_TYPE));
 	}
 }
 
@@ -386,7 +386,7 @@ void read_in_mlp(struct mlp *nn, char *path)
 	close_file(&holder);
 }
 
-void inference_mlp(struct mlp *nn, TYPE *input)
+void inference_mlp(struct mlp *nn, TA_TYPE *input)
 {
 	int i;
 	for (i = 0; i < nn->layer_counter; i++) {

@@ -2,7 +2,7 @@
 
 
 __attribute__((target("sse2"))) void 
-matrix_dot_vector(TYPE *matrix, TYPE *vector, int x, int y, TYPE *result, TYPE *bias, int add)
+matrix_dot_vector(TA_TYPE *matrix, TA_TYPE *vector, int x, int y, TA_TYPE *result, TA_TYPE *bias, int add)
 {
 	int i, j;
 
@@ -18,15 +18,15 @@ matrix_dot_vector(TYPE *matrix, TYPE *vector, int x, int y, TYPE *result, TYPE *
 	}
 }
 
-__attribute__((target("sse2"))) void ta_sigmoid(TYPE *vector, unsigned int length)
+__attribute__((target("sse2"))) void ta_sigmoid(TA_TYPE *vector, unsigned int length)
 {
 	while (length--)
 		vector[length] = 1.0f / (1.0f + exp(-vector[length]));
 }
 
-__attribute__((target("sse2"))) void ta_tanh(TYPE *vector, unsigned int length)
+__attribute__((target("sse2"))) void ta_tanh(TA_TYPE *vector, unsigned int length)
 {
-	TYPE x, y;
+	TA_TYPE x, y;
 	while (length) {
 		x = exp(vector[--length]);
 		y = exp(-vector[length]);
@@ -34,17 +34,17 @@ __attribute__((target("sse2"))) void ta_tanh(TYPE *vector, unsigned int length)
 	}
 }
 
-__attribute__((target("sse2"))) void ta_relu(TYPE *vector, unsigned int length)
+__attribute__((target("sse2"))) void ta_relu(TA_TYPE *vector, unsigned int length)
 {
 	while (length)
 		if (vector[--length] < 0)
 			vector[length] = 0;
 }
 
-__attribute__((target("sse2"))) void inference_gru_cell(struct gru_cell *cell, TYPE *input)
+__attribute__((target("sse2"))) void inference_gru_cell(struct gru_cell *cell, TA_TYPE *input)
 {
     int i;
-	TYPE *hidden = cell->hidden;
+	TA_TYPE *hidden = cell->hidden;
 	matrix_dot_vector(cell->wir, input, cell->hidden_size, cell->input_size, cell->rt, cell->bir, 0);
 	matrix_dot_vector(cell->whr, hidden, cell->hidden_size, cell->hidden_size, cell->rt, cell->bhr, 1);
 	ta_sigmoid(cell->rt, cell->hidden_size);
@@ -98,7 +98,7 @@ __attribute__((target("sse2"))) void init_gru_cell(struct gru_cell *cell, unsign
 			hidden_size,
 			hidden_size,
 	};
-	TYPE **parameter_matrix[] = {
+	TA_TYPE **parameter_matrix[] = {
 			&cell->wir,
 			&cell->wiz,
 			&cell->win,
@@ -119,7 +119,7 @@ __attribute__((target("sse2"))) void init_gru_cell(struct gru_cell *cell, unsign
 	cell->hidden_size = hidden_size, cell->input_size = input_size;
 
 	for (i = 0; i < GRU_PARAM_MATRIX_NUM; i++) 
-		*parameter_matrix[i] = (TYPE *)assign_memory(size[i] * sizeof(TYPE));
+		*parameter_matrix[i] = (TA_TYPE *)assign_memory(size[i] * sizeof(TA_TYPE));
 	
 	cell->inference = &inference_gru_cell;
 	cell->free = &free_gru_cell;
@@ -132,7 +132,7 @@ __attribute__((target("sse2"))) void init_gru_cell(struct gru_cell *cell, unsign
 __attribute__((target("sse2"))) void free_gru_cell(struct gru_cell *cell)
 {
 	int i;
-	TYPE **parameter_matrix[] = {
+	TA_TYPE **parameter_matrix[] = {
 			&cell->wir,
 			&cell->wiz,
 			&cell->win,
@@ -176,7 +176,7 @@ __attribute__((target("sse2"))) void read_in_gru_cell(struct gru_cell *cell, cha
 			hidden_size,
 			hidden_size,
 	};
-	TYPE **parameter_matrix[] = {
+	TA_TYPE **parameter_matrix[] = {
 			&cell->wir,
 			&cell->wiz,
 			&cell->win,
@@ -197,7 +197,7 @@ __attribute__((target("sse2"))) void read_in_gru_cell(struct gru_cell *cell, cha
 
 	open_file(&holder, path);
 	for (i = 0; i < GRU_PARAM_MATRIX_NUM - 1; i++) {
-		read_bytes(&holder, (char *) *parameter_matrix[i], size[i] * sizeof(TYPE));
+		read_bytes(&holder, (char *) *parameter_matrix[i], size[i] * sizeof(TA_TYPE));
 	}
 	close_file(&holder);
 }
@@ -214,9 +214,9 @@ __attribute__((target("sse2"))) void init_fc_layer(struct fc_layer *layer, unsig
 {
 	layer->input_size = input_size;
 	layer->output_size = output_size;
-	layer->result = (TYPE *)assign_memory(output_size * sizeof(TYPE));
-	layer->b = (TYPE *)assign_memory(output_size * sizeof(TYPE));
-	layer->w = (TYPE *)assign_memory(input_size * output_size * sizeof(TYPE));
+	layer->result = (TA_TYPE *)assign_memory(output_size * sizeof(TA_TYPE));
+	layer->b = (TA_TYPE *)assign_memory(output_size * sizeof(TA_TYPE));
+	layer->w = (TA_TYPE *)assign_memory(input_size * output_size * sizeof(TA_TYPE));
 
 	switch (activate)
 	{
@@ -247,7 +247,7 @@ __attribute__((target("sse2"))) void free_fc_layer(struct fc_layer *layer)
 	free_memory((char*) layer->w);
 }
 
-__attribute__((target("sse2"))) void inference_fc_layer(struct fc_layer *layer, TYPE *input)
+__attribute__((target("sse2"))) void inference_fc_layer(struct fc_layer *layer, TA_TYPE *input)
 {
 	matrix_dot_vector(layer->w, input, layer->output_size, layer->input_size, layer->result, layer->b, 0);
 	if (layer->activate_function)
@@ -262,13 +262,13 @@ __attribute__((target("sse2"))) void read_in_fc_layer(struct fc_layer *layer, st
 			input_size * output_size,
 			output_size
 	};
-	TYPE **parameter_matrix[] = {
+	TA_TYPE **parameter_matrix[] = {
 			&layer->w,
 			&layer->b
 	};
 
 	for (i = 0; i < FC_PARAM_MATRIX_NUM; i++) {
-		read_bytes(holder, (char *) *parameter_matrix[i], size[i] * sizeof(TYPE));
+		read_bytes(holder, (char *) *parameter_matrix[i], size[i] * sizeof(TA_TYPE));
 	}
 }
 
@@ -305,7 +305,7 @@ __attribute__((target("sse2"))) void read_in_mlp(struct mlp *nn, char *path)
 	close_file(&holder);
 }
 
-__attribute__((target("sse2"))) void inference_mlp(struct mlp *nn, TYPE *input)
+__attribute__((target("sse2"))) void inference_mlp(struct mlp *nn, TA_TYPE *input)
 {
 	int i;
 	for (i = 0; i < nn->layer_counter; i++) {

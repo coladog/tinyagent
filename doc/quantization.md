@@ -3,7 +3,7 @@
 ## Quantization
 
 [Quantization](https://en.wikipedia.org/wiki/Quantization) techniques are widely used in large neural network to reduce memory consumption and inference overhead.
-Its idea is to use low-precision data types to express the model (for example, from 32-bits floating point to 8-bit integer), thus trading computational precision for resource overhead.
+Its idea is to use low-precision data TA_TYPEs to express the model (for example, from 32-bits floating point to 8-bit integer), thus trading computational precision for resource overhead.
 
 In TinyAgent, the goal is to integrate the computation so that it can run in environments that do not support floating point computation.
 We use a relatively simple and basic quantization strategy, and more advanced techniques can be used to further reduce overhead and tune the computing accuracy.
@@ -69,3 +69,9 @@ $$q_3 = (int32) ((int64) q_1 * (int64) q_2) >> 30) $$
 For addition, the formular can be simplified into:
 $$q_4 = q_1 + q_2$$
 
+The parameters of quantization is defined in [tiny_agent.h](../src/integer_based/tiny_agent.h) as:
+```
+#define F_RANGE 10
+#define SCALE_BIT 30
+#define TABLE_RANGE 10000
+```

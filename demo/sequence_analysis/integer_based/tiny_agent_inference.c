@@ -21,13 +21,13 @@
 #define TANH_OUTPUT "./data/tanh_table_output.ta"
 
 // convert a quantized value back to its floating-point version
-double r_quantized(TYPE v)
+double r_quantized(TA_TYPE v)
 {
     return (double) v * FLOAT_RANGE / (1 << SCALE_BIT);
 }
 
 // quantized a floating-point based value into its integer-based version
-TYPE f_quantized(float v)
+TA_TYPE f_quantized(float v)
 {
 	return v * (1 << SCALE_BIT) / FLOAT_RANGE;
 }
@@ -73,7 +73,7 @@ int main()
         cell.clear(&cell);
         for (j = 0; j < seq_len[i]; j++) {
             float float_based = input[j];
-            TYPE integer_based = f_quantized(float_based);
+            TA_TYPE integer_based = f_quantized(float_based);
             cell.inference(&cell, &integer_based);
         }
         nn.inference(&nn, cell.hidden);

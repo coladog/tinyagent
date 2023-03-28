@@ -55,3 +55,4 @@ def collate_fn(data):
 
 if __name__ == "__main__":
     generate_dataset()
+    print("[+] generated training dataset into pytorch_model_generator/data/train.pkl")

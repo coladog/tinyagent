@@ -1,31 +1,203 @@
 # Demo: Sequence analysis
 
-In this example, we build a neural network consistes of a gated recurrent unit and a multi-layer perceptron, to read in a sequence consisting 0/1.
+In this demo, we build a neural network consistes of a gated recurrent unit and a multi-layer perceptron, to read in a sequence consisting 0/1.
 The network will inference the number of 1 contained in this sequence and the length of this sequence.
 
-First, the demo will generate two pythorch models. The ./demo/pythorch_model_generator directory includes 3 .py file to generate a dataset and then gernerate models to train the dataset.
-1. data_generator.py: this file will generate 10,000 sequences which are randomly consist of 0's and 1's. The length of each sequence is also randomly generated and lies between 1 and 20. Each sequence has a label and consists of a 2-tuple, which is (length of 1/length of sequence, length of sequence/max sequence length). In this demo, max sequence length is set to 20 (in util.py). For exameple, [[1], [1], [1]] is a random sequence. Then its label is (1.0, 0.15). The 10,000 sequences and tags will be stored under data/train.pkl after running the python code.
-2. model_generator.py: this file will generate a gru and mlp model based on pyTorch. The architecture of gru and mlp are defined in util.py. In this demo, gru only has one layer with 1 input and 4 hidden. The hidden state output from gru is the input to mlp. The mlp has the architecture with 4-4-2. The output is the 2-tuple label. Thus, this file read the data from data/train.pkl and use the data to train gru and mlp. The parameters of these two model will be stored in gru.model and mlp.model.
+For example, for input = [0, 1, 0, 1], the trained model should predict the length of the sequence = 4, and the number of 1 contained = 2.
 
-Next, floating point calculation or integer calculation can be choosed. Both of these are used in the same way. 
+***
 
-Floating point based is under floating_point_based directory and integer based is under integer_based directory.
-Here is for floating based.
-1. convert_param_from_pytorch.py: this file convert the pythorch model paramters to the parameter that can be used in TinyAgent(.ta file). 
-2. tiny_agent_inference.c: this code read the parameters stored in .ta file and use the methond in TinyAgent to construct a model in code which can do the same caculation with model contructed by Pytorch. For example, the model we created in this demo is one layer gru and 4-4-1 mlp, so use init_gru_ceil(args) to create one layer gru and init_fc_layer(args) to get the 4-4-1 fully connected layers. Then the created model will be used to test. In this demo, we test 3 times. To run this file, need to make and run ./tiny_agent_inference.
-We also use the orignial pytorch model to test.
-3. pytorch_inference.py: is still use the pytorch model to test.
+## Generate data for training:
 
-We could compare the testing results generated form step 2 and step 3, the results are the same.
+```
+cd ./demo/sequence_analysis/pytorch_model_generator
+python3 data_generator.py
+```
 
-Here is for integer based, which is almost same with floating based.
-1. convert_param_from_pytorch.py: this file convert the pythorch model paramters to the parameter that can be used in TinyAgent(.ta file). 
-2. generate_activation_table.py: this file is for activation fuction. The original activation function in the neural network was calculated using floating point numbers, here it is transformed into a tabular form without direct calculation. The table is queried by reading and writing from a file under \data. In this demo, the original sigmoid will be used through sigmoid_table_input.ta and sigmoid_table_output.ta; original tanh function will be used through tanh_table_input.ta and tanh_table_output.ta.
+Output:
 
-The following 2 steps are the same with floating based.
+```
+[+] generated training dataset into pytorch_model_generator/data/train.pkl
+```
 
-3. tiny_agent_inference.c: this code read the parameters stored in .ta file and use the methond in TinyAgent to construct a model in code which can do the same caculation with model contructed by Pytorch. For example, the model we created in this demo is one layer gru and 4-4-1 mlp, so use init_gru_ceil(args) to create one layer gru and init_fc_layer(args) to get the 4-4-1 fully connected layers. Then the created model will be used to test. In this demo, we test 3 times. To run this file, need to make and run ./tiny_agent_inference.
-We also use the orignial pytorch model to test.
-4. pytorch_inference.py: is still use the pytorch model to test.
+## Train a model (GRU + MLP) via PyTorch:
 
-We could still compare the testing results generated form step 2 and step 3, the results are the same.
+```
+cd ./demo/sequence_analysis/pytorch_model_generator
+python3 model_generator.py
+```
+
+Output:
+```
+[+] Training  1/30: loss: 0.08032
+[+] Training  2/30: loss: 0.05505
+[+] Training  3/30: loss: 0.02690
+[+] Training  4/30: loss: 0.00576
+[+] Training  5/30: loss: 0.00249
+[+] Training  6/30: loss: 0.00117
+[+] Training  7/30: loss: 0.00066
+[+] Training  8/30: loss: 0.00041
+[+] Training  9/30: loss: 0.00025
+[+] Training 10/30: loss: 0.00016
+[+] Training 11/30: loss: 0.00011
+[+] Training 12/30: loss: 0.00008
+[+] Training 13/30: loss: 0.00006
+[+] Training 14/30: loss: 0.00005
+[+] Training 15/30: loss: 0.00004
+[+] Training 16/30: loss: 0.00003
+[+] Training 17/30: loss: 0.00003
+[+] Training 18/30: loss: 0.00003
+[+] Training 19/30: loss: 0.00002
+[+] Training 20/30: loss: 0.00002
+[+] Training 21/30: loss: 0.00002
+[+] Training 22/30: loss: 0.00002
+[+] Training 23/30: loss: 0.00002
+[+] Training 24/30: loss: 0.00001
+[+] Training 25/30: loss: 0.00001
+[+] Training 26/30: loss: 0.00001
+[+] Training 27/30: loss: 0.00001
+[+] Training 28/30: loss: 0.00001
+[+] Training 29/30: loss: 0.00001
+[+] Training 30/30: loss: 0.00001
+[+] Saved trained models into pytorch_model_generator/data/gru.model & pytorch_model_generator/data/mlp.model
+```
+
+## Inference with userspace PyTorch:
+
+```
+cd ./demo/sequence_analysis/integer_based
+python3 pytorch_inference.py
+```
+
+Output:
+```
+[+] read param from:
+[+]       ../pytorch_model_generator/data/gru.model
+[+]       ../pytorch_model_generator/data/mlp.model
+[+]
+[+] now testing sequence:  [1, 0, 1, 1, 0, 0, 1, 0, 1]
+[+]      prediction: [0.5533, 0.4490] -> number of 1: 5 | length of sequence: 9
+[+] now testing sequence:  [0, 0, 1, 0, 1]
+[+]      prediction: [0.4014, 0.2509] -> number of 1: 2 | length of sequence: 5
+[+] now testing sequence:  [1, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+[+]      prediction: [0.5977, 0.4978] -> number of 1: 6 | length of sequence: 10
+```
+
+**Note the result for prediction will not be exactly the same, as there's randomness in data generation and training.**
+
+## Inference with floating-point based TinyAgent:
+
+### Convert paramaters generated from PyTorch to TinyAgent:
+
+```
+cd ./demo/sequence_analysis/floating_point_based
+python3 convert_param_from_pytorch.py
+```
+
+Output:
+```
+[+] converted param from PyTorch to TinyAgent:
+[+]      ../pytorch_model_generator/data/gru.model -> ./data/gru.ta
+[+]      ../pytorch_model_generator/data/mlp.model -> ./data/mlp.ta
+```
+
+### Compile TinyAgent:
+
+```
+cd ./demo/sequence_analysis/floating_point_based
+make && make clean
+```
+
+Output:
+```
+gcc -Wall -g -c tiny_agent_inference.c -o tiny_agent_inference.o
+gcc -Wall -g -c ../../../src/floating_point_based/tiny_agent_f.c -o tiny_agent_f.o -lm
+gcc -Wall -g -c ../../../src/floating_point_based/tiny_agent_io.c -o tiny_agent_io.o
+gcc -Wall -g tiny_agent_inference.o tiny_agent_f.o tiny_agent_io.o -o tiny_agent_inference -lm
+rm *.o
+```
+
+### Inference with TinyAgent
+
+```
+cd ./demo/sequence_analysis/floating_point_based
+./tiny_agent_inference
+```
+
+Output:
+```
+[+] read param from:
+[+]      ./data/gru.ta
+[+]      ./data/mlp.ta
+[+]
+[+] now testing sequence: [1, 0, 1, 1, 0, 0, 1, 0, 1]
+[+]      prediction: [0.5533, 0.4490] -> number of 1: 5 | length of sequence: 9 
+[+] now testing sequence: [0, 0, 1, 0, 1]
+[+]      prediction: [0.4014, 0.2509] -> number of 1: 2 | length of sequence: 5 
+[+] now testing sequence: [1, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+[+]      prediction: [0.5977, 0.4978] -> number of 1: 6 | length of sequence: 10
+```
+
+**Note the result for prediction will not be exactly the same, as there's randomness in data generation and training.**
+
+## Inference with integer-point based TinyAgent:
+
+### Convert paramaters generated from PyTorch to TinyAgent:
+
+```
+cd ./demo/sequence_analysis/integer_based
+python3 convert_param_from_pytorch.py
+```
+
+Output:
+```
+[+] converted param from PyTorch to integer-based TinyAgent:
+[+]      ../pytorch_model_generator/data/gru.model -> ./data/gru.ta
+[+]      ../pytorch_model_generator/data/mlp.model -> ./data/mlp.ta
+```
+
+### Compile TinyAgent:
+
+```
+cd ./demo/sequence_analysis/integer_based
+make && make clean
+```
+
+Output:
+```
+gcc -Wall -Wno-unused -g -c tiny_agent_inference.c -o tiny_agent_inference.o
+gcc -Wall -Wno-unused -g -c ../../../src/integer_based/tiny_agent.c -o tiny_agent.o
+gcc -Wall -Wno-unused -g -c ../../../src/integer_based/tiny_agent_io.c -o tiny_agent_io.o
+gcc -Wall -Wno-unused -g tiny_agent_inference.o tiny_agent.o tiny_agent_io.o -o tiny_agent_inference
+rm *.o
+```
+
+### Inference with TinyAgent
+
+```
+cd ./demo/sequence_analysis/integer_based
+./tiny_agent_inference
+```
+
+Output:
+```
+[+] read param from:
+[+]      ./data/gru.ta
+[+]      ./data/mlp.ta
+[+]
+[+] now testing sequence: [1, 0, 1, 1, 0, 0, 1, 0, 1]
+[+]      prediction: [0.5533, 0.4488] -> number of 1: 5 | length of sequence: 9 
+[+] now testing sequence: [0, 0, 1, 0, 1]
+[+]      prediction: [0.4014, 0.2508] -> number of 1: 2 | length of sequence: 5 
+[+] now testing sequence: [1, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+[+]      prediction: [0.5977, 0.4978] -> number of 1: 6 | length of sequence: 10
+```
+
+**Note the result for prediction will not be exactly the same, as there's randomness in data generation and training.**
+
+# Run full demo with script
+
+```
+cd ./demo/sequence_analysis
+bash run_me.sh
+```

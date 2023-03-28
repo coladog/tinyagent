@@ -1,5 +1,5 @@
 ![](assets/logo.png)
-# TinyAgent: Easily applying neural network inside systems.
+# TinyAgent: Easily applying neural networks inside systems.
 
 TinyAgent is a tool to help experiment with machine learning for systems.
 TinyAgent generates C-based neural networks for inference in systems (Linux kernel, database kernel, middleware, etc. ), and trains the neural network with powerful userspace tools (TinyAgent is designed to read in parameters generated from PyTorch).
@@ -19,6 +19,13 @@ As of now, TinyAgent has the following features:
 ***
 
 ## Usage
+
+### Computing
+
+The computing part is defined in:
+
+* For floating-point-based: [tiny_agent_f.h](./src/floating_point_based/tiny_agent_f.h) and [tiny_agent_f.c](./src/floating_point_based/tiny_agent_f.c).
+* For [integer-based](./doc/quantization.md): [tiny_agent.h](./src/integer_based/tiny_agent.h) and [tiny_agent.c](./src/integer_based/tiny_agent.c).
 
 Create a GRU (Gated Recurrent Unit, an RNN model) unit and load the parameters:
 ```c
@@ -60,11 +67,26 @@ Delete the multi-layer perceptron:
 nn.free(&nn);
 ```
 
+### I/O
+
+The main I/O involved in TinyAgent includes local file system read/write and heap memory request/release.
+Depending on the platform on which they are compiled, the implementation of these interfaces may be different.
+It's definded in [tiny_agent_io.c](./src/integer_based/tiny_agent_io.c) and [tiny_agent_io.h](./src/integer_based/tiny_agent_io.h).
+
+We provide implementations for three compilation environments:
+1. [Userspace C](./src/io_interfaces_for_replacement/standard_userspace_c/).
+2. [Linux kernel with version 4.9](./src/io_interfaces_for_replacement/linux_kernel_v1/). You might need it if you want to experiment on Nvidia Jetson Board. Theoritically it works for kernel version <= 5.4.
+3. [Linux kernel with version 5.15](./src/io_interfaces_for_replacement/linux_kernel_v2/). You might need it if you want to experiment on Raspberry Pi. Theoritically it works for kernel version > 5.4.
+
 ## Integer-based computing
 
 The integer-based inference is done through quantization technique.
-See [how](./doc/quantization.md) we design and implement it.
+See [how](./doc/quantization.md) it is designed and implemented in TinyAgent.
 
 ## Demo
 
 We provide a [demo](./doc/demo_sa.md) to show how to train a neural network using PyTorch and use TinyAgent to read the trained network and make inference based on floating-point/integer.
+
+## Citation
+
+A paper describing a deep reinforcement learning-driven CPU frequency controller built on TinyAgent running under the Linux CPUFreq framework will be put up soon, please read/cite it if you find it interesting : )
