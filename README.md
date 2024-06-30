@@ -1,7 +1,5 @@
 ![](assets/logo.png)
-# TinyAgent: Easily applying neural networks inside systems.
-
-TinyAgent is a tool to help experiment with machine learning for systems.
+# TinyAgent: Easily applying neural networks inside Linux kernel-similar environments.TinyAgent is a tool to help experiment with machine learning for systems.
 TinyAgent generates C-based neural networks for inference in systems (Linux kernel, database kernel, middleware, etc. ), and trains the neural network with powerful userspace tools (TinyAgent is designed to read in parameters generated from PyTorch).
 
 See [motivation](./doc/motivation.md) behind it.
@@ -89,4 +87,15 @@ We provide a [demo](./doc/demo_sa.md) to show how to train a neural network usin
 
 ## Citation
 
-A paper describing a deep reinforcement learning-driven CPU frequency controller built on TinyAgent running under the Linux CPUFreq framework will be put up soon, please read/cite it if you find it interesting : )
+This is our paper describing a deep reinforcement learning-driven CPU frequency controller built on TinyAgent running under the Linux CPUFreq framework:
+
+@article{zhou2023cpu,
+  title={CPU frequency scheduling of real-time applications on embedded devices with temporal encoding-based deep reinforcement learning},
+  author={Zhou, Ti and Lin, Man},
+  journal={Journal of Systems Architecture},
+  volume={142},
+  pages={102955},
+  year={2023},
+  publisher={Elsevier}
+}
+
