@@ -89,6 +89,7 @@ We provide a [demo](./doc/demo_sa.md) to show how to train a neural network usin
 
 This is our paper describing a deep reinforcement learning-driven CPU frequency controller built on TinyAgent running under the Linux CPUFreq framework:
 
+```
 @article{zhou2023cpu,
   title={CPU frequency scheduling of real-time applications on embedded devices with temporal encoding-based deep reinforcement learning},
   author={Zhou, Ti and Lin, Man},
@@ -98,4 +99,4 @@ This is our paper describing a deep reinforcement learning-driven CPU frequency 
   year={2023},
   publisher={Elsevier}
 }
-
+```
