@@ -1,5 +1,7 @@
 ![](assets/logo.png)
-# TinyAgent: Easily applying neural networks inside Linux kernel-similar environments.TinyAgent is a tool to help experiment with machine learning for systems.
+# TinyAgent: Easily applying neural networks inside Linux kernel-similar environments.
+
+TinyAgent is a tool to help experiment with machine learning for systems.
 TinyAgent generates C-based neural networks for inference in systems (Linux kernel, database kernel, middleware, etc. ), and trains the neural network with powerful userspace tools (TinyAgent is designed to read in parameters generated from PyTorch).
 
 See [motivation](./doc/motivation.md) behind it.
